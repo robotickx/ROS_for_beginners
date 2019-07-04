@@ -1,0 +1,33 @@
+#!/usr/bin/env python
+
+import rospy
+import actionlib
+
+from new_package.msg import CountToAction, CountToGoal, CountToFeedback
+rospy.init_node('CountToClient')
+
+def feed_callback(msg):
+    feedback = msg.feedback.countedTill
+
+    pass
+
+def takeInput():
+    userInput = raw_input("Enter goal: ")
+
+    try:
+        userInput = int(userInput)
+    except ValueError:
+        print('Entered value is not an integer')
+
+    return userInput
+
+client = actionlib.SimpleActionClient('countTo', CountToAction)
+client.wait_for_server()
+sub = rospy.Subscriber('countTo/feedback', CountToFeedback, feed_callback)
+
+goal = CountToGoal()
+
+while not rospy.is_shutdown():
+    userInput = takeInput()
+    goal.uptoNumber = userInput
+    client.send_goal(goal)

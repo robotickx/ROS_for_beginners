@@ -1,0 +1,131 @@
+#!/usr/bin/env python
+
+import rospy
+import actionlib
+import math
+
+from new_package.msg import GoToAction, GoToResult, GoToFeedback
+from geometry_msgs.msg import Twist
+from turtlesim.msg import Pose
+
+class turtle:
+
+    def __init__(self):
+
+        rospy.init_node('TurtleServer')
+
+        self.Server = actionlib.SimpleActionServer('goTo', GoToAction, self.server_callback, auto_start = False)
+        self.VelCommand = rospy.Publisher('turtle1/cmd_vel', Twist, queue_size = 1)
+        self.MyPose = rospy.Subscriber('turtle1/pose', Pose, self.update_pose)
+
+        self.initialize_pose()
+        self.rate = rospy.Rate(20)
+
+        self.tolerance = 0.05
+
+        self.cmd_vel = Twist()
+        self.Server.start()
+
+    def initialize_pose(self):
+        self.myPose = Pose()
+        self.myPose.x = 0
+        self.myPose.y = 0
+        self.myPose.theta = 0
+
+    def update_pose(self, msg):
+        self.myPose.x = round(msg.x, 3)
+        self.myPose.y = round(msg.y, 3)
+        self.myPose.theta = round(msg.theta, 3)
+
+    def server_callback(self, goal):
+        self.goalX = goal.x
+        self.goalY = goal.y
+
+        self.go_to()
+
+    def go_to(self):
+
+        self.distance_remaining = self.distance(self.goalX, self.goalY, self.myPose.x, self.myPose.y)
+        self.success = True
+
+        while self.distance_remaining > self.tolerance:
+
+            if not self.Server.is_preempt_requested():
+
+                self.velocity = self.vel_req()
+                self.angular_velocity = self.ang_vel_req()
+
+                self.send_velocity()
+                self.distance_remaining = self.distance(self.goalX, self.goalY, self.myPose.x, self.myPose.y)
+                self.send_feedback()
+                self.rate.sleep()
+
+            else:
+
+                self.velocity = 0
+                self.angular_velocity = 0
+
+                self.send_velocity()
+                self.success = False
+                break
+
+            if self.success:
+                self.velocity = 0
+                self.angular_velocity = 0
+                self.send_velocity()
+
+        result = GoToResult()
+        result.reached = self.success
+        self.Server.set_succeeded(result)
+
+    def vel_req(self):
+        return (2*(self.distance_remaining)) + 1
+
+    def ang_vel_req(self):
+        goal_angular_position = math.atan2(self.goalY - self.myPose.y, self.goalX - self.myPose.x)
+        goal_angular_position = self.get_quad(goal_angular_position)
+        angular_vel = (goal_angular_position - self.myPose.theta)
+        angular_vel = 20 * self.update_angle(angular_vel)
+
+        return angular_vel
+
+    def get_quad(self, angle):
+
+        if angle > 0 and self.goalY < self.myPose.y:
+            angle = angle - math.pi
+        elif angle < 0 and self.goalY > self.myPose.y:
+            angle = angle + math.pi
+        return angle
+
+    def update_angle(self, angle):
+
+        if angle < (-1 * math.pi):
+            angle = (2*math.pi) + angle
+        elif angle > math.pi:
+            angle = angle - (2*math.pi)
+        return angle
+
+    def send_feedback(self):
+
+        feedback = GoToFeedback()
+        feedback.remaining = self.distance_remaining
+        self.Server.publish_feedback(feedback)
+
+    def send_velocity(self):
+
+        self.cmd_vel.linear.x = self.velocity
+        self.cmd_vel.linear.y = 0
+        self.cmd_vel.linear.z = 0
+        self.cmd_vel.angular.x = 0
+        self.cmd_vel.angular.y = 0
+        self.cmd_vel.angular.z = self.angular_velocity
+
+        self.VelCommand.publish(self.cmd_vel)
+
+    def distance(self, x1, y1, x2, y2):
+
+        return ((x1-x2)**2 + (y1-y2)**2)**0.5
+
+if __name__ == '__main__':
+    turtlesim_turtle = turtle()
+    rospy.spin()

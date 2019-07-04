@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+
+import rospy    #ROS python library
+from std_msgs.msg import Int32
+
+rospy.init_node('First_publisher')
+pub = rospy.Publisher('first_topic', Int32, queue_size = 10)
+
+rate = rospy.Rate(5)
+
+count = 0
+
+while not rospy.is_shutdown():
+    pub.publish(count)
+    count = count + 1
+    rate.sleep()

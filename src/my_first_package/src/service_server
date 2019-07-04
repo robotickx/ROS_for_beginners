@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+
+import rospy
+from my_first_package.srv import SqRoot
+
+rospy.init_node('ServiceServer')
+
+def findSqRoot(req):
+    number = req.number
+    return (number ** 0.5)
+
+server = rospy.Service('squareRoot', SqRoot, findSqRoot)
+rospy.spin()

@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+
+import rospy
+import actionlib
+
+from new_package.msg import CountToAction, CountToResult, CountToFeedback
+
+rospy.init_node('CountToServer')
+
+rate = rospy.Rate(1)
+
+def serverCallback(goal):
+    countTill = goal.uptoNumber
+    feedback = CountToFeedback()
+
+    for i in range(1, countTill+1):
+
+        if action_server.is_preempt_requested():
+            success = False
+            break
+        else:
+            print(i)
+            feedback.countedTill = i
+            if i == countTill:
+                success = True
+        action_server.publish_feedback(feedback)
+        rate.sleep()
+
+    result = CountToResult()
+    result.reached = success
+    action_server.set_succeeded(result)
+
+action_server = actionlib.SimpleActionServer('countTo', CountToAction, serverCallback, auto_start = False)
+action_server.start()
+
+rospy.spin()

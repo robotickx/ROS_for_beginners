@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+
+import rospy
+from std_msgs.msg import Int32
+from std_msgs.msg import String
+
+rospy.init_node('PubAndSub')
+
+pub = rospy.Publisher('number_type', String, queue_size = 10)
+message = String()
+
+def is_prime(number):
+    answer = True
+    for i in range(2, number):
+        if number%i == 0:
+            answer = False
+            break
+
+    return answer
+
+def callback(msg):
+    number = msg.data
+
+    if number == 0 or number == 1:
+        message.data = 'None'
+    else:
+        if is_prime(number):
+            message.data = 'Prime'
+        else:
+            message.data = 'Composite'
+
+    pub.publish(message)
+
+sub = rospy.Subscriber('first_topic', Int32, callback)
+
+rospy.spin()

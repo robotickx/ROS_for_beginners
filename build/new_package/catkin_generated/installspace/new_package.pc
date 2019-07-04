@@ -1,0 +1,8 @@
+prefix=/home/robotickx/catkin_ws/install
+
+Name: new_package
+Description: Description of new_package
+Version: 0.0.0
+Cflags: -I/home/robotickx/catkin_ws/install/include
+Libs: -L/home/robotickx/catkin_ws/install/lib 
+Requires: 

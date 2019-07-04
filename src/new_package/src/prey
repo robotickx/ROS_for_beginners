@@ -1,0 +1,114 @@
+#!/usr/bin/env python
+
+import rospy
+
+from math import pi
+from random import random
+
+from geometry_msgs.msg import Twist
+from turtlesim.msg import Pose
+
+from turtlesim.srv import Spawn
+from turtlesim.srv import TeleportAbsolute
+
+class prey:
+
+    def __init__(self, name):
+
+        self.name = name
+
+        self.spawn_service = rospy.ServiceProxy('spawn', Spawn)
+        self.teleport_service = rospy.ServiceProxy(self.name + '/teleport_absolute', TeleportAbsolute)
+
+        self.vel_publisher = rospy.Publisher(self.name + '/cmd_vel', Twist, queue_size = 1)
+
+        self.initialize_vars()
+
+    def initialize_vars(self):
+
+        self.velocity = Twist()
+        self.velocity.linear.x = random() * 2
+        self.velocity.linear.y = 0
+        self.velocity.linear.z = 0
+        self.velocity.angular.x = 0
+        self.velocity.angular.y = 0
+        self.velocity.angular.z = 0
+
+        self.agile = random() * 50
+        self.tolerance = 0.5
+
+        self.MyX = 0
+        self.MyY = 0
+        self.HisX = 10
+        self.HisY = 10
+
+        rospy.wait_for_service('spawn')
+        self.spawn_service(11*random(),11*random(), (2*pi*random()) - pi, self.name)
+        self.alive = True
+
+        myPose = rospy.Subscriber(self.name + '/pose', Pose, self.MyPose)
+        predatorPose = rospy.Subscriber('turtle1/pose', Pose, self.HisPose)
+
+    def MyPose(self, msg):
+        self.MyX = msg.x
+        self.MyY = msg.y
+
+    def HisPose(self, msg):
+        self.HisX = msg.x
+        self.HisY = msg.y
+
+    def move(self):
+
+        if self.alive:
+
+            self.velocity.angular.z = (random() - 0.5)*self.agile
+            self.vel_publisher.publish(self.velocity)
+
+        else:
+            self.velocity.angular.z = 0
+            self.velocity.linear.x = 0
+            self.vel_publisher.publish(self.velocity)
+
+    def is_caught(self):
+
+        distance = (((self.HisX - self.MyX)**2) + ((self.HisY - self.MyY)**2))**0.5
+
+        if distance < self.tolerance:
+            self.alive = False
+
+    def respawn(self):
+        rospy.wait_for_service(self.name + '/teleport_absolute')
+        self.teleport_service(11*random(), 11*random(), (2*random()*pi) - pi)
+        self.velocity.linear.x = random() * 2
+        self.agile = random() * 50
+        self.alive = True
+
+class prey_controller:
+    def __init__(self):
+
+        rospy.init_node('Prey_controller')
+
+        self.turtle2 = prey('turtle2')
+        self.turtle3 = prey('turtle3')
+
+        self.rate = rospy.Rate(10)
+
+    def start(self):
+
+        while not rospy.is_shutdown():
+
+            self.turtle2.move()
+            self.turtle3.move()
+
+            self.turtle2.is_caught()
+            self.turtle3.is_caught()
+
+            if (not self.turtle2.alive) and (not self.turtle3.alive):
+                self.turtle2.respawn()
+                self.turtle3.respawn()
+
+            self.rate.sleep()
+
+if __name__ == '__main__':
+    controller = prey_controller()
+    controller.start()

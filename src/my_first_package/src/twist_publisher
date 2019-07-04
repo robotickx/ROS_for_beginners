@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+
+import rospy
+from geometry_msgs.msg import Twist
+
+rospy.init_node('Velocity_commander')
+
+pub_vel = rospy.Publisher('turtle1/cmd_vel', Twist, queue_size = 5)
+
+rate = rospy.Rate(1)
+
+msg = Twist()
+msg.angular.x = 0
+msg.angular.y = 0
+msg.angular.z = 1
+msg.linear.x = 1
+msg.linear.y = 0
+msg.linear.z = 0
+
+speed = 1
+
+while not rospy.is_shutdown():
+
+    speed = speed + 0.1
+    msg.linear.x = speed
+    pub_vel.publish(msg)
+
+    rate.sleep()

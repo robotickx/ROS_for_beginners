@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+
+import rospy
+from std_msgs.msg import String
+from geometry_msgs.msg import Twist
+
+rospy.init_node('TurtleController')
+
+pub_vel = rospy.Publisher('turtle1/cmd_vel', Twist, queue_size = 1)
+
+message = Twist()
+
+def command_callback(msg):
+    command = msg.data
+
+    message.linear.y = 0
+    message.linear.z = 0
+    message.angular.x = 0
+    message.angular.y = 0
+
+    if command == 'forward':
+        message.linear.x = 1
+        message.angular.z = 0
+    elif command == 'backward':
+        message.linear.x = -1
+        message.angular.z = 0
+    elif command == 'turn_left':
+        message.linear.x = 0
+        message.angular.z = 1
+    elif command == 'turn_right':
+        message.linear.x = 0
+        message.angular.z = -1
+    else:
+        message.linear.x = 0
+        message.angular.z = 0
+
+    pub_vel.publish(message)
+
+sub = rospy.Subscriber('command', String, command_callback)
+rospy.spin()

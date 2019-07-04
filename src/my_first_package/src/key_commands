@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+
+import rospy
+from std_msgs.msg import String
+
+rospy.init_node('Commander')
+
+pub_command = rospy.Publisher('command', String, queue_size = 1)
+
+command_dict = {
+                    'w': 'forward',
+                    's': 'backward',
+                    'q': 'turn_left',
+                    'e': 'turn_right'
+                }
+
+while not rospy.is_shutdown():
+    key = raw_input('Enter key: ')
+
+    if key in command_dict.keys():
+        command = command_dict[key]
+    else:
+        command = 'stop'
+
+    pub_command.publish(command)

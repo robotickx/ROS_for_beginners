@@ -1,0 +1,7 @@
+<launch>
+
+<node pkg = "turtlesim" type = "turtlesim_node" name = "Turtlesim" />
+<node pkg = "new_package" type = "turtleActionServer" name = "Server" respawn = "True" />
+<node pkg = "new_package" type = "turtleActionClient" name = "node2" output = "screen" />
+
+</launch>

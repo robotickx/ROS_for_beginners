@@ -1,0 +1,14 @@
+#!/usr/bin/env python
+
+import rospy
+from std_msgs.msg import Int32
+
+rospy.init_node('First_subscriber')
+
+def callback(msg):
+    data_received = msg.data
+    print(data_received)
+
+sub = rospy.Subscriber('first_topic', Int32, callback)
+
+rospy.spin()

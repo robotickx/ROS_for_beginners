@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+
+import rospy
+import actionlib
+
+from new_package.msg import GoToAction, GoToGoal
+
+class client:
+
+    def __init__(self):
+
+        rospy.init_node('TurtleClient')
+        self.client = actionlib.SimpleActionClient('goTo', GoToAction)
+        self.client.wait_for_server()
+
+        self.goal = GoToGoal()
+
+    def newInput(self):
+
+        try:
+            self.goal.x, self.goal.y = raw_input('Enter goal values: ').split()
+
+            self.goal.x = float(self.goal.x)
+            self.goal.y = float(self.goal.y)
+
+            self.client.send_goal(self.goal)
+
+        except ValueError:
+            self.client.cancel_goal()
+
+if __name__ == '__main__':
+    turtleClient = client()
+
+    while not rospy.is_shutdown():
+        turtleClient.newInput()
